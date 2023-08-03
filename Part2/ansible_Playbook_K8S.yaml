@@ -1,0 +1,56 @@
+---
+- name: Install Kubernetes
+  hosts: kubernetes_nodes
+  become: true
+  vars:
+    kubernetes_version: "1.21.3"  # Set the desired Kubernetes version
+  tasks:
+    - name: Install kubeadm, kubelet, and kubectl
+      yum:
+        name:
+          - kubeadm
+          - kubelet
+          - kubectl
+        state: present
+      vars:
+        ansible_python_interpreter: /usr/bin/python3  # Use this if Python 3 is the default Python on your target nodes
+      tags:
+        - kubernetes
+
+- name: Initialize Kubernetes Master
+  hosts: kubernetes_master
+  become: true
+  tasks:
+    - name: Initialize Kubernetes master node
+      shell: kubeadm init --kubernetes-version={{ kubernetes_version }}
+      register: kubeadm_output
+      args:
+        creates: /etc/kubernetes/admin.conf
+      tags:
+        - kubernetes
+
+    - name: Set up kubeconfig for non-root user
+      copy:
+        src: /etc/kubernetes/admin.conf
+        dest: /home/{{ ansible_user }}/.kube/config
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        mode: 0600
+      become: false
+      tags:
+        - kubernetes
+
+    - name: Deploy Pod network (e.g., Calico)
+      shell: kubectl apply -f https://docs.projectcalico.org/v3.18/manifests/calico.yaml
+      tags:
+        - kubernetes
+
+- name: Join Kubernetes Worker Nodes
+  hosts: kubernetes_worker
+  become: true
+  tasks:
+    - name: Join worker nodes to the cluster
+      shell: "{{ hostvars['kubernetes_master_node']['kubeadm_output']['stdout_lines'][0] }} worker --token {{ hostvars['kubernetes_master_node']['kubeadm_output']['stdout_lines'][2] }} --discovery-token-ca-cert-hash {{ hostvars['kubernetes_master_node']['kubeadm_output']['stdout_lines'][3] }}"
+      tags:
+        - kubernetes
+

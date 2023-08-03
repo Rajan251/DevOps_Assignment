@@ -1,0 +1,9 @@
+i) Write Linux commands to check the storage of each folder present in ‘/home’ directory.
+du -h /home/*
+
+ii) Write a Linux command to check CPU Utilization, RAM, and Number of CPU Cores.
+
+top
+
+lscpu
+
