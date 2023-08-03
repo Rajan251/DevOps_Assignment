@@ -7,8 +7,10 @@ Q2. Write git commands step by step to push the local git branch into the GitLab
 1.git init
 2.git add .
 3.git commit -m "first commit"
-4.git remote add origin <repository_url>
-5.git push -u origin master
+4.git branch -M main
+5.git remote add origin <repository_url>
+6.git push -u origin master
+
 
 Q3. How to resolve merge conflicts in GitLab (or GitHub)?
 
